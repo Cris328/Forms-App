@@ -3,6 +3,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { JWT_EXPIRES_IN, JWT_SECRET } from "../config/env.js";
+import Profile from "../models/profile.model.js";
 
 export const signUp = async (req, res, next) => {
     const session = await mongoose.startSession();
@@ -28,6 +29,14 @@ export const signUp = async (req, res, next) => {
             email,
             password: hashedPassword
         }], { session });
+
+        const newProfile = new Profile({
+          user: newUsers[0]._id,
+          displayName: name || 'Nuevo Usuario',
+          bio: '',
+          avatarUrl: ''
+      });
+      await newProfile.save({ session });
 
         const token = jwt.sign({ userId: newUsers[0]._id }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 
