@@ -5,10 +5,16 @@ import { PORT } from './config/env.js';
 import authRouter from './routes/auth.routes.js';
 import userRouter from './routes/user.routes.js';
 import profileRouter from './routes/profile.routes.js';
-import connectToDatabase from './database/mongodb.js';
+import connectToDatabase from './database/mongodb.js'; 
 import errorMiddleware from './middlewares/error.middleware.js';
 import cookieParser from 'cookie-parser';
 import arcjetMiddleware from './middlewares/arcjet.middleware.js';
+import topicRouter from './routes/topic.routes.js';
+import templateRouter from './routes/template.routes.js';
+import submissionRouter from './routes/submission.routes.js';
+import commentRouter from './routes/comment.routes.js';
+import likeRouter from './routes/like.routes.js';
+import formResponseRouter from './routes/formResponse.routes.js';
 
 const app = express(); 
 
@@ -20,6 +26,12 @@ app.use(arcjetMiddleware);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/profiles', profileRouter);
+app.use('/api/v1/topics', topicRouter);
+app.use('/api/v1/templates', templateRouter);
+app.use('/api/v1/submissions', submissionRouter);
+app.use('/api/v1/comments', commentRouter);
+app.use('/api/v1/likes', likeRouter);
+app.use('/api/v1/form-responses', formResponseRouter);
 
 app.use(errorMiddleware);
 
@@ -31,6 +43,6 @@ app.listen(PORT, async () => {
     console.log(`Server running at http://localhost:${PORT}/`);
 
     await connectToDatabase();
-});
+    });
 
 export default app; 
