@@ -1,5 +1,6 @@
 import Template from '../models/template.model.js';
-import { validationResult } from 'express-validator';
+import jwt from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 export const createTemplate = async (req, res) => {
   try {
@@ -23,27 +24,38 @@ export const createTemplate = async (req, res) => {
 };
 
 export const getAllTemplates = async (req, res) => {
-    try {
-      const search = req.query.search || '';
-  
-      const templates = await Template.find({
-        $or: [
-          { title: { $regex: search, $options: 'i' } },
-          { description: { $regex: search, $options: 'i' } },
-          { tags: { $regex: search, $options: 'i' } },
-          { topic: { $regex: search, $options: 'i' } },
-        ],
-        visibility: 'public',
-      })
-        .sort({ createdAt: -1 })
-        .populate('author', 'name')
-        .lean();
-  
-      res.status(200).json(templates);
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+  try {
+    const search = req.query.search || '';
+    const topic = req.query.topic;
+
+    const regex = new RegExp(search, 'i');
+
+    const filters = {
+      visibility: 'public',
+      $or: [
+        { title: regex },
+        { description: regex },
+        { tags: regex },
+      ],
+    };
+
+    if (topic && mongoose.Types.ObjectId.isValid(topic)) {
+      filters.topic = topic;
     }
-  };
+
+    const templates = await Template.find(filters)
+      .sort({ createdAt: -1 })
+      .populate('author', 'name')
+      .lean();
+
+    res.status(200).json(templates);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+
 
 export const getPopularTemplates = async (req, res, next) => {
   try {
@@ -58,21 +70,26 @@ export const getPopularTemplates = async (req, res, next) => {
   }
 };
 
-export const getTemplateById = async (req, res, next) => {
+export const getTemplateById = async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Invalid template ID format' });
+  }
+
   try {
-    const template = await Template.findById(req.params.id).populate('createdBy', 'name');
+    const template = await Template.findById(id)
+      .populate('createdBy', 'username')
+      .populate('comments.user', 'username');
 
     if (!template) {
-      return res.status(404).json({ message: 'Template not found' });
+      return res.status(404).json({ error: 'Template not found' });
     }
 
-    if (!template.isPublic && (!req.user || (!req.user._id.equals(template.createdBy) && !template.allowedUsers.includes(req.user.email)))) {
-      return res.status(403).json({ message: 'Not allowed to view this template' });
-    }
-
-    res.status(200).json({ success: true, data: template });
+    res.json(template);
   } catch (error) {
-    next(error);
+    console.error('Error fetching template by ID:', error);
+    res.status(500).json({ error: 'Server error' });
   }
 };
 
@@ -157,25 +174,20 @@ export const deleteTemplate = async (req, res, next) => {
   }
 };
 
-export async function searchTemplates(req, res, next) {
-    try {
-      const { query } = req.query;
-  
-      if (!query || query.trim() === '') {
-        return res.status(400).json({ success: false, message: 'Search query is required' });
-      }
-  
-      const regex = new RegExp(query, 'i');
-  
-      const templates = await Template.find({
-        $or: [
-          { title: regex },
-          { description: regex }
-        ]
-      }).sort('-createdAt');
-  
-      res.json({ success: true, data: templates });
-    } catch (err) {
-      next(err);
+export const searchTemplates = async (req, res) => {
+  try {
+    const { search } = req.query
+    if (!search) {
+      return res.status(400).json({ message: 'Search query is required.' });
     }
+
+    const templates = await Template.find({
+      $text: { $search: search },
+    }).exec();
+
+    res.status(200).json({ data: templates });
+  } catch (error) {
+    console.error('Error searching templates:', error);
+    res.status(500).json({ message: 'Server error while searching templates' });
   }
+};

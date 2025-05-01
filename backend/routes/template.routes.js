@@ -8,23 +8,22 @@ import {
   deleteTemplate,
   toggleLikeTemplate,
   commentTemplate,
+  searchTemplates,
 } from '../controllers/template.controller.js';
 
 import optionalAuth from '../middlewares/optionalAuth.js';
 import authorize from '../middlewares/auth.middleware.js';
 import authorizeOwnerOrAdmin from '../middlewares/authorizeOwnerOrAdmin.js';
-import { searchTemplates } from '../controllers/template.controller.js';
-
 
 const templateRouter = express.Router();
 
-templateRouter.get('/', optionalAuth, getAllTemplates);
-
-templateRouter.get('/popular', optionalAuth, getPopularTemplates);
+templateRouter.get('/search', optionalAuth, searchTemplates);
 
 templateRouter.get('/:id', optionalAuth, getTemplateById);
 
-templateRouter.get('/search', optionalAuth, searchTemplates);
+templateRouter.get('/', authorize, getAllTemplates);
+
+templateRouter.get('/popular', authorize, getPopularTemplates);
 
 templateRouter.post('/', authorize, createTemplate);
 

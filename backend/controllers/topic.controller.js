@@ -1,10 +1,12 @@
 import Topic from '../models/topic.model.js';
 
-export const listTopics = async (req, res, next) => {
+export const getAllTopics = async (req, res) => {
   try {
-    const topics = await Topic.find().sort('name');
-    res.status(200).json({ success: true, data: topics });
-  } catch (err) {
-    next(err);
+    const topics = await Topic.find();
+    res.status(200).json(topics);
+  } catch (error) {
+    console.error("Error getting topics:", error);
+    res.status(500).json({ message: "Error fetching topics" });
   }
 };
+

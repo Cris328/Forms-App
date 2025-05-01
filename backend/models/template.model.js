@@ -1,15 +1,14 @@
 import mongoose from 'mongoose';
 
 const questionSchema = new mongoose.Schema({
-  type: {
+  content: { 
     type: String,
-    enum: ['string', 'text', 'integer', 'checkbox'],
     required: true
   },
-  title: { type: String, required: true },
-  description: { type: String, default: '' },
-  showInSummary: { type: Boolean, default: false },
-  options: [String] 
+  answer: { 
+    type: String,
+    default: ''
+  }
 });
 
 const templateSchema = new mongoose.Schema({
@@ -41,6 +40,8 @@ const templateSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const template = mongoose.model('Template', templateSchema);
+templateSchema.index({ title: 'text' });
 
-export default template;
+const Template = mongoose.model('Template', templateSchema);
+
+export default Template;
